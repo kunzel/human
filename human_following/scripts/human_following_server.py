@@ -77,10 +77,11 @@ class followingServer(object):
 
 	    def execute(self,userdata):
 
-		rospy.sleep(rospy.Duration(0.5))
-		rospy.loginfo("Execute Following")
+		rospy.sleep(rospy.Duration(0.3))
 		move_client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+		rospy.loginfo("Waiting for move_base action server...")
     		move_client.wait_for_server(rospy.Duration(60))
+		rospy.loginfo("Connected to move base server")
     		move_goal = MoveBaseGoal()
    		move_goal.target_pose.header.frame_id = 'map'
  	 	move_goal.target_pose.header.stamp = rospy.Time.now()
@@ -91,21 +92,21 @@ class followingServer(object):
 		dist = math.sqrt(xx * xx + yy * yy)		
 		q = [self.current_robot.orientation.x, self.current_robot.orientation.y, self.current_robot.orientation.z, self.current_robot.orientation.w ]
 		robot_angles = euler_from_quaternion(q,'rxyz')
-		print robot_angles[2]
+		#print robot_angles[2]
 		human_angle = math.atan((yy)/(xx))
 		if xx<0:
 		    if yy>0:
 			human_angle = human_angle + 3.14
 		    else:
 			human_angle = human_angle - 3.14
-		print human_angle
+		#print human_angle
 		rot_angle = human_angle - robot_angles[2]
 		if rot_angle < -3.14:
 		    rot_angle = rot_angle + 6.28
 		if rot_angle > 3.14:
 		    rot_angle = rot_angle - 6.28
 		rot_angle_degree = rot_angle / 6.28 * 360
-		print rot_angle_degree
+		#print rot_angle_degree
 
 		if dist <= 3.0:
 		    move_goal.target_pose.pose = self.current_robot
@@ -118,28 +119,45 @@ class followingServer(object):
 		else:
 	 	    move_goal.target_pose.pose = self.current_pose_tf		
 		move_client.send_goal(move_goal)
-		finished_within_time = move_client.wait_for_result(rospy.Duration(0.5))
+		finished_within_time = move_client.wait_for_result(rospy.Duration(0.1))
 		
-		rospy.loginfo("Finish Following")
+		pan_client = actionlib.SimpleActionClient('SetPTUState', PtuGotoAction)
+		rospy.loginfo("Waiting for Pantilt action server...")		
+	        pan_client.wait_for_server(rospy.Duration(60))
+ 		rospy.loginfo("Connected to pan tilt server")
 
-		#pan_client = actionlib.SimpleActionClient('SetPTUState', PtuGotoAction)
-	        #pan_client.wait_for_server(rospy.Duration(60))
-	        #pan_goal = PtuGotoGoal() 
-	        #pan_goal.pan = 0
-	        #pan_goal.tilt = 0
-	        #pan_goal.pan_vel = 1
-	        #pan_goal.tilt_vel = 1
 
-		
-		#pan_goal.pan = robot_angles[2] - human_angle
-		#if pan_goal.pan < -3.14:
-		#    pan_goal.pan = pan_goal.pan + 6.28
-		#if pan_goal.pan > 3.14:
-		#    pan_goal.pan = pan_goal.pan - 6.28
-		#pan_goal.pan = pan_goal.pan / 6.28 * 360
-		#print pan_goal.pan
-	        #pan_client.send_goal(pan_goal)
-	        #pan_client.wait_for_result(rospy.Duration(0.5)) 
+		xx = self.current_pose.position.x - self.current_robot.position.x
+		yy = self.current_pose.position.y - self.current_robot.position.y
+		dist = math.sqrt(xx * xx + yy * yy)		
+		q = [self.current_robot.orientation.x, self.current_robot.orientation.y, self.current_robot.orientation.z, self.current_robot.orientation.w ]
+		robot_angles = euler_from_quaternion(q,'rxyz')
+		#print robot_angles[2]
+		human_angle = math.atan((yy)/(xx))
+		if xx<0:
+		    if yy>0:
+			human_angle = human_angle + 3.14
+		    else:
+			human_angle = human_angle - 3.14
+		#print human_angle
+		rot_angle = human_angle - robot_angles[2]
+		if rot_angle < -3.14:
+		    rot_angle = rot_angle + 6.28
+		if rot_angle > 3.14:
+		    rot_angle = rot_angle - 6.28
+		rot_angle_degree = rot_angle / 6.28 * 360
+		#print rot_angle_degree
+
+	        pan_goal = PtuGotoGoal() 
+	        pan_goal.pan = rot_angle_degree
+	        pan_goal.tilt = 0
+	        pan_goal.pan_vel = 1
+	        pan_goal.tilt_vel = 1
+		if dist <=2.0:
+		    pan_goal.tilt = 10
+
+	        pan_client.send_goal(pan_goal)
+	        pan_client.wait_for_result(rospy.Duration(0.1)) 
  
 		rospy.loginfo("New Position")
  		return 'succeeded'
