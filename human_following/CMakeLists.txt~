@@ -99,17 +99,6 @@ include_directories(
 )
 
 
-add_executable(human/human_following scripts/human_following_server.py)
-
-target_link_libraries(
-  human/human_following_server
-  ${catkin_LIBRARIES}
-)
-
-add_dependencies(
-  human/human_following_server
-  ${learning_actionlib_EXPORTED_TARGETS}
-)
 
 ## Declare a cpp library
 # add_library(human_following

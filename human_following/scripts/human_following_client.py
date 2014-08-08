@@ -3,7 +3,7 @@
 
 import rospy
 import actionlib
-from human_following.msg import *
+from human_msgs.msg import *
 def following_client():
 
     rospy.init_node('navi', anonymous=False)
@@ -16,6 +16,7 @@ def following_client():
     goal = human_followingGoal()
 
     goal.time = 60
+    goal.distance = 2
     
     client.send_goal(goal)
 
@@ -23,6 +24,7 @@ def following_client():
 if __name__ == '__main__':
     try:
         following_client() 
+	rospy.spin()
 
     except rospy.ROSInterruptException:
         print "program interrupted before completion"
