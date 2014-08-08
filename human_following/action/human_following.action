@@ -1,8 +1,0 @@
-#goal definition
-int32 time
----
-#result definition
-int32 tracknum
----
-#feedback
-int32 trackstatus
