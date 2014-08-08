@@ -15,7 +15,7 @@ def following_client():
 
     goal = human_followingGoal()
 
-    goal.time = 60
+    goal.time = 10
     goal.distance = 2
     
     client.send_goal(goal)

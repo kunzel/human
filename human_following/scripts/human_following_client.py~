@@ -24,6 +24,7 @@ def following_client():
 if __name__ == '__main__':
     try:
         following_client() 
+	rospy.spin()
 
     except rospy.ROSInterruptException:
         print "program interrupted before completion"
