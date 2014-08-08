@@ -38,10 +38,10 @@ class followingServer(object):
         smach_thread = threading.Thread(target = self.agent.executing_sm)
         smach_thread.start()
 
-	#while (1):
-	    #if rospy.get_time() - timegoing > goal.time:
+	while (1):
+	    if rospy.get_time() - timegoing > goal.time:
 		#smach_thread.stop()			
-		#return
+		return
 
 
 def main():
