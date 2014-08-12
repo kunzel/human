@@ -215,7 +215,7 @@ class Searching(smach.State):
 	#print data.pose.position.x, data.pose.position.y, data.pose.position.z, self.is_received
     
     def people_pose_cb(self, data):
-	self.current_pose_tf = data.poses[0]
+	#self.current_pose_tf = data.poses[0]
 	if len(data.ids) == 0:
 	    self.is_received = False
 	else:
@@ -298,8 +298,8 @@ class MoveSearching(smach.State):
 		#find the nearest
 		self.id_now = data.ids[data.distances.index(min(data.distances))]
 		return
-	if self.id_now != -1:
-	    self.current_pose_tf = data.poses[self.id_now]
+	if self.id_now != -1 and self.id_now in data.ids:
+	    self.current_pose_tf = data.poses[data.ids.index(self.id_now)]
 	if (not self.suspend) and not(self.id_now in data.ids):
 	    self.suspend = True
 	else:
