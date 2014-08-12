@@ -9,7 +9,7 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from actionlib import *
 from actionlib.msg import *
 from nav_goals_msgs.srv import NavGoals
-from geometry_msgs.msg import Polygon, Pose, PoseStamped, Point
+from geometry_msgs.msg import Polygon, Pose, PoseStamped, Point, Point32
 from tf.transformations import quaternion_about_axis, quaternion_multiply, euler_from_quaternion
 from scitos_ptu.msg import *
 from sensor_msgs.msg import *
@@ -106,9 +106,9 @@ class Wandering(smach.State):
        	except rospy.ServiceException, e:
       	    rospy.logerr("Service call failed: %s" % e)
 	while (not self.preempt_requested()):
+	    '''
 	    self.polygon = Polygon()
-	    self.num = 1
-	    self.radius = 0.5
+
 	    self.polygon.points = []
 	    p = Point()
 	    p.x = 5.0
@@ -127,6 +127,15 @@ class Wandering(smach.State):
 	    p.y = -18.0
 	    self.polygon.points.append(p)
 	    #print  self.polygon
+		'''
+            poly = rospy.get_param('wander_area',[])
+            points = []
+            for point in poly:
+                rospy.loginfo('Point: %s', point)
+            	points.append(Point32(float(point[0]),float(point[1]),0))
+            self.polygon = Polygon(points) 
+	    self.num = 1
+	    self.radius = 0.5
 	    nav_goal = self.nav_goals(self.num,self.radius,self.polygon)
 
 
@@ -136,9 +145,7 @@ class Wandering(smach.State):
    	    goal.target_pose.header.frame_id = 'map'
  	    goal.target_pose.header.stamp = rospy.Time.now()
     	    goal.target_pose.pose = nav_goal.goals.poses[0]
-    	    #goal.target_pose.pose.position.y = -5.0;
-    	    #goal.target_pose.pose.orientation.w = 1.0;
-		    		
+	    		
 	    client.send_goal(goal)
 		
 	
@@ -156,15 +163,24 @@ class Searching(smach.State):
 	smach.State.__init__(self,
 			     outcomes=['succeeded','aborted','preempted'],
 			     )
-	self.pub = rospy.Publisher('/b21/pose_tf', PoseStamped)
-	rospy.Subscriber('/b21/pose', PoseStamped, self.tf_cb)
-	rospy.Subscriber('/b21/pose_tf', PoseStamped, self.following_cb)
-	#rospy.Subscriber('/strands_perception_people_msgs', PedestrianLocations, self.people_pose_cb)
+
+	if rospy.get_param('envr','') == 'sim':
+	    self.topic_setting_sim()
+	else:
+	    self.topic_setting_real()
 
 	self.current_pose = Pose()
 	self.current_pose_tf = Pose()
 	self.is_received = bool()
 	#self.is_received = True
+
+    def topic_setting_sim(self):
+	self.pub = rospy.Publisher('/b21/pose_tf', PoseStamped)
+	rospy.Subscriber('/b21/pose', PoseStamped, self.tf_cb)
+	rospy.Subscriber('/b21/pose_tf', PoseStamped, self.following_cb)
+
+    def topic_setting_real(self):
+	rospy.Subscriber('/strands_perception_people_msgs', PedestrianLocations, self.people_pose_cb)
 
     def execute(self,userdata):
 	while(1):
@@ -211,21 +227,30 @@ class MoveSearching(smach.State):
 			     outcomes=['succeeded','aborted','preempted'],
 			     output_keys=['current_robot','current_pose_tf']
 			     )
-	self.pub = rospy.Publisher('/b21/pose_tf', PoseStamped)
-	rospy.Subscriber('/b21/pose', PoseStamped, self.tf_cb)
-	rospy.Subscriber('/b21/pose_tf', PoseStamped, self.following_cb)
-	#rospy.Subscriber('/strands_perception_people_msgs', PedestrianLocations, self.people_pose_cb)
+
+
+	if rospy.get_param('envr','') == 'sim':
+	    self.topic_setting_sim()
+	else:
+	    self.topic_setting_real()
+
 	rospy.Subscriber('/robot_pose', Pose, self.robot_pose_cb)
 	self.current_robot = Pose()
 	self.current_pose = Pose()
 	self.current_pose_tf = Pose()
 	self.is_received = bool()
-	#self.is_received = True
 	self.suspend = False
-	#self.trackid1 = []
-	#self.trackid2 = []
-	#self.trackid3 = []
 	self.id_now = -1
+
+
+
+    def topic_setting_sim(self):
+	self.pub = rospy.Publisher('/b21/pose_tf', PoseStamped)
+	rospy.Subscriber('/b21/pose', PoseStamped, self.tf_cb)
+	rospy.Subscriber('/b21/pose_tf', PoseStamped, self.following_cb)
+
+    def topic_setting_real(self):
+	rospy.Subscriber('/strands_perception_people_msgs', PedestrianLocations, self.people_pose_cb)
 
     def execute(self,userdata):
 	count = 0
@@ -265,11 +290,6 @@ class MoveSearching(smach.State):
 	    self.is_received = True
 
     def people_pose_cb(self, data):
-	
-	#self.trackid3 = self.trackid2
-	#self.trackid2 = self.trackid1
-	#self.trackid1 = data.ids
-	
 	if self.id_now == -1:
 	    if len(data.ids) == 0:
 		self.is_received = False
@@ -323,13 +343,38 @@ class Following(smach.State):
 	smach.State.__init__(self,
 			     outcomes=['succeeded','aborted','preempted'],
 			     input_keys = ['current_robot','current_pose_tf'])
-	#self.pub = rospy.Publisher('/b21/pose_tf', PoseStamped)
-    	#rospy.Subscriber('/b21/pose', PoseStamped, self.tf_cb)
-	#rospy.Subscriber('/b21/pose_tf', PoseStamped, self.following_cb)
-	#rospy.Subscriber('/robot_pose', Pose, self.robot_pose_cb)
-	#self.current_pose = Pose()
-	#self.current_pose_tf = Pose()
-	#self.current_robot = Pose()
+
+    def ray_intersect_seg(self, p, a, b):
+	if a.y > b.y:
+	    a,b = b,a
+	if p.y == a.y or p.y == b.y:
+	    p = Point32(p.x, p.y + 0.00001, 0)
+	intersect = False
+	if (p.y > b.y or p.y < a.y) or (p.x > max(a.x, b.x)):
+   	    return False
+	if p.x < min(a.x, b.x):
+	    intersect = True
+	else:
+	    if abs(a.x - b.x) > sys.float_info.min:
+		m_red = (b.y - a.y) / float(b.x - a.x)
+	    else:
+		m_red = sys.float_info.max
+	    if abs(a.x - p.x) > sys.float_info.min:
+		m_blue = (p.y - a.y) / float(p.x - a.x)
+	    else:
+		m_blue = sys.float_info.max
+    	    intersect = m_blue >= m_red
+	return intersect
+
+    def is_odd(self, x): return x%2 == 1
+
+    def is_inside(self, p, poly):
+        ln = len(poly)
+	num_of_intersections = 0
+	for i in range(0,ln):
+	    num_of_intersections += self.ray_intersect_seg(p, poly[i], poly[(i + 1) % ln])
+	return self.is_odd(num_of_intersections)
+
 
     def execute(self,userdata):
 	rospy.sleep(rospy.Duration(0.3))
@@ -362,7 +407,17 @@ class Following(smach.State):
 	    rot_angle = rot_angle - 6.28
 	rot_angle_degree = rot_angle / 6.28 * 360
 	#print rot_angle_degree
-	if dist <= 3.0:
+
+
+        poly = rospy.get_param('follow_area',[])
+        points = []
+        for point in poly:
+            rospy.loginfo('Point: %s', point)
+            points.append(Point32(float(point[0]),float(point[1]),0))
+	p = Point(userdata.current_pose_tf.position.x, userdata.current_pose_tf.position.y, userdata.current_pose_tf.position.z)
+
+
+	if dist <= 3.0 or not self.is_inside(p, points):
 	    move_goal.target_pose.pose = userdata.current_robot
 	    rotq = quaternion_about_axis(rot_angle, [0,0,1])
 	    newq = quaternion_multiply(q,rotq) 
@@ -372,6 +427,8 @@ class Following(smach.State):
 	    move_goal.target_pose.pose.orientation.w = newq[3]
 	else:
  	    move_goal.target_pose.pose = userdata.current_pose_tf		
+
+
 
   	move_client.send_goal(move_goal)
 	finished_within_time = move_client.wait_for_result(rospy.Duration(0.1))
@@ -407,7 +464,9 @@ class Following(smach.State):
         pan_goal.tilt = 0
         pan_goal.pan_vel = 1
         pan_goal.tilt_vel = 1
-	if dist <= 2.0:
+
+	distance = rospy.get_param('distance', 2)
+	if dist <= distance:
 	    pan_goal.tilt = 10
 
         pan_client.send_goal(pan_goal)

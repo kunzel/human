@@ -6,7 +6,7 @@ import actionlib
 from human_msgs.msg import *
 def following_client():
 
-    rospy.init_node('navi', anonymous=False)
+    rospy.init_node('human_following_client', anonymous=False)
 
     client = actionlib.SimpleActionClient('following_Server', human_followingAction)
 
@@ -15,7 +15,7 @@ def following_client():
 
     goal = human_followingGoal()
 
-    goal.time = 10
+    goal.time = 300
     goal.distance = 2
     
     client.send_goal(goal)
