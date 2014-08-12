@@ -1,13 +1,14 @@
 <launch>
-  <!--
-  <rosparam param="wander_area">[[2.0,-8.0],[5.0,-8.0],[5.0,2.0],[2.0,2.0]]</rosparam> 
-  <rosparam param="follow_area">[[2.0,-8.0],[5.0,-8.0],[5.0,2.0],[2.0,2.0]]</rosparam> 
--->
+  <!-- lg_20140618 -->
+  <rosparam param="wander_area">[[0.0,5.0],[0.0,-18.0],[-4.5,-18.0],[-4.5,5.0]]</rosparam> 
+  <rosparam param="follow_area">[[0.0,5.0],[0.0,-18.0],[-4.5,-18.0],[-4.5,5.0]]</rosparam> 
 
+  <!-- lg simulation 
   <rosparam param="wander_area">[[-5.0,-18.0],[5.0,-18.0],[5.0,5.0],[-5.0,5.0]]</rosparam> 
   <rosparam param="follow_area">[[-5.0,-18.0],[5.0,-18.0],[5.0,5.0],[-5.0,5.0]]</rosparam> 
+  -->
 
   <param name="time" type="int" value="300" />
   <param name="distance" type="int" value="2" />
-  <param name="envr" type="str" value="sim" />
+  <param name="envr" type="str" value="real" /> <!-- [sim,real] -->
 </launch>

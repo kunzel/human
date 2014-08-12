@@ -180,7 +180,7 @@ class Searching(smach.State):
 	rospy.Subscriber('/b21/pose_tf', PoseStamped, self.following_cb)
 
     def topic_setting_real(self):
-	rospy.Subscriber('/strands_perception_people_msgs', PedestrianLocations, self.people_pose_cb)
+	rospy.Subscriber('/pedestrian_localisation/localisations', PedestrianLocations, self.people_pose_cb)
 
     def execute(self,userdata):
 	while(1):
@@ -250,7 +250,7 @@ class MoveSearching(smach.State):
 	rospy.Subscriber('/b21/pose_tf', PoseStamped, self.following_cb)
 
     def topic_setting_real(self):
-	rospy.Subscriber('/strands_perception_people_msgs', PedestrianLocations, self.people_pose_cb)
+	rospy.Subscriber('/pedestrian_localisation/localisations', PedestrianLocations, self.people_pose_cb)
 
     def execute(self,userdata):
 	count = 0
