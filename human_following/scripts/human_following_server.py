@@ -30,22 +30,23 @@ class followingServer(object):
     
     def execute(self, goal):
         rospy.loginfo('Starting Service')
-    	timegoing = rospy.get_time()
-    	rospy.loginfo('%d %f',goal.time,timegoing)
+    	timestart = rospy.get_time()
+  	timegoing = rospy.get_param('time',300)
 
 
 	self.agent = FollowingSM()
         smach_thread = threading.Thread(target = self.agent.executing_sm)
         smach_thread.start()
 
-	while (1):
-	    if rospy.get_time() - timegoing > goal.time:
-		#smach_thread.stop()			
+	while not rospy.is_shutdown():
+	    if rospy.get_time() - timestart > timegoing:
+		#smach_thread.stop()	
+		rospy.signal_shutdown('Timeout')		
 		return
 
 
 def main():
-    rospy.init_node('following')
+    rospy.init_node('human_following_server')
     server = followingServer()
     rospy.spin()
       

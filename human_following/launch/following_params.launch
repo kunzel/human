@@ -1,0 +1,13 @@
+<launch>
+  <!--
+  <rosparam param="wander_area">[[2.0,-8.0],[5.0,-8.0],[5.0,2.0],[2.0,2.0]]</rosparam> 
+  <rosparam param="follow_area">[[2.0,-8.0],[5.0,-8.0],[5.0,2.0],[2.0,2.0]]</rosparam> 
+-->
+
+  <rosparam param="wander_area">[[-5.0,-18.0],[5.0,-18.0],[5.0,5.0],[-5.0,5.0]]</rosparam> 
+  <rosparam param="follow_area">[[-5.0,-18.0],[5.0,-18.0],[5.0,5.0],[-5.0,5.0]]</rosparam> 
+
+  <param name="time" type="int" value="300" />
+  <param name="distance" type="int" value="2" />
+  <param name="envr" type="str" value="sim" />
+</launch>
