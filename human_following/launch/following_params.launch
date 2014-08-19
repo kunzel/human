@@ -1,14 +1,19 @@
 <launch>
-  <!-- lg_20140618 -->
+  <!-- lg_20140618 
   <rosparam param="wander_area">[[0.0,5.0],[0.0,-18.0],[-4.5,-18.0],[-4.5,5.0]]</rosparam> 
   <rosparam param="follow_area">[[0.0,5.0],[0.0,-18.0],[-4.5,-18.0],[-4.5,5.0]]</rosparam> 
-
-  <!-- lg simulation 
-  <rosparam param="wander_area">[[-5.0,-18.0],[5.0,-18.0],[5.0,5.0],[-5.0,5.0]]</rosparam> 
-  <rosparam param="follow_area">[[-5.0,-18.0],[5.0,-18.0],[5.0,5.0],[-5.0,5.0]]</rosparam> 
   -->
 
+  <!-- lg real -->
+  <rosparam param="wander_area">[[-5.0,-18.0],[5.0,-18.0],[5.0,-17.0],[-2.0,-17.0],[-2.0,0.0],[0.0,0.0],[0.0,3.5],[5.0,3.5],[5.0,5.0],[-5.0,5.0]]</rosparam> 
+  <rosparam param="follow_area">[[-5.0,-18.0],[5.0,-18.0],[5.0,-17.0],[-2.0,-17.0],[-2.0,0.0],[0.0,0.0],[0.0,3.5],[5.0,3.5],[5.0,5.0],[-5.0,5.0]]</rosparam> 
+  
+  <rosparam param="wait_point">[-2.5,1.0,0.0,0.0,0.0,0.0,1.0]</rosparam> <!-- [x,y,z,alpha,peta,ceta,w]  -->
+
+  <param name="wandering_mode" type="str" value="wait" /> <!--[normal,wait]-->
   <param name="time" type="int" value="300" />
-  <param name="distance" type="int" value="2" />
+  <param name="alpha" type="double" value="0.1" />
+  <param name="max_t_frames" type="int" value="20" />
+  <param name="distance" type="double" value="2.5" />
   <param name="envr" type="str" value="real" /> <!-- [sim,real] -->
 </launch>
