@@ -47,5 +47,7 @@ Parameters you can change are listed below:
 Problems
 ============================
 Local Searching state may not working at all
+
 Can't catch up with human's normal pace
+
 Can't follow when people walking towards bob and passing by
