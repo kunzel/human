@@ -1,0 +1,10 @@
+<launch>
+
+  <include file="$(find human_following)/launch/following_params.launch"/>
+
+  <include file="$(find nav_goals_generator)/launch/nav_goals_generator.launch"/>
+
+  <node name="human_following_server" pkg="human_following" type="human_following_server.py" output="screen"/>
+
+
+</launch>

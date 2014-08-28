@@ -1,0 +1,5 @@
+<launch>
+
+  <node name="human_following_client" pkg="human_following" type="human_following_client.py" output="screen"/>
+
+</launch>

@@ -1,8 +1,0 @@
-<launch>
-
-  <include file="$(find human_following)/launch/following_params.launch"/>
-
-  <node name="human_following_server" pkg="human_following" type="human_following_server.py" />
-  <node name="human_following_client" pkg="human_following" type="human_following_client.py" />
-
-</launch>
