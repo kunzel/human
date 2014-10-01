@@ -46,8 +46,9 @@ Parameters you can change are listed below:
     
 Problems
 ============================
-all the robots in the simulation must be named in the form
-  human[number]
-and all waypoint class attached to the robots must be named in the form
-  motion[number]
-where the number starts from 0 to the number of robots in the simulation minus one.
+
+Local Searching state may not work at all.
+
+Can not catch up with human's normal pace.
+
+Can not follow when people walk towards or pass by the robot.
