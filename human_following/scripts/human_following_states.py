@@ -5,7 +5,9 @@ import smach_ros
 import math
 from smach_ros import SimpleActionState
 from human_msgs.msg import *
-from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+#from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from strands_navigation_msgs.msg import MonitoredNavigationAction,
+MonitoredNavigationGoal 
 from actionlib import *
 from actionlib.msg import *
 from nav_goals_msgs.srv import NavGoals
@@ -40,14 +42,12 @@ class FollowingSM(object):
 
 
 	    def child_term_cb(outcome_map):
-		print "jj"
 	 	if outcome_map['Searching'] == 'succeeded':
 		    return True
 		print "should never see it"
 	 	return False
 
 	    def out_cb(outcome_map):
-		print "kk"
 	   	if outcome_map['Searching'] == 'succeeded':
 	      	    return 'aborted'
 	   	else:
@@ -171,16 +171,18 @@ class Wandering(smach.State):
 	    wait_point.orientation.z = wp_array[5]
 	    wait_point.orientation.w = wp_array[6]
 
-	    client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-    	    client.wait_for_server(rospy.Duration(60))
-    	    goal = MoveBaseGoal()
+	    client = actionlib.SimpleActionClient('monitored_navigation',
+                MonitoredNavigationAction)
+        client.wait_for_server(rospy.Duration(60))
+        goal = MonitoredNavigationGoal()
    	    goal.target_pose.header.frame_id = 'map'
  	    goal.target_pose.header.stamp = rospy.Time.now()
+        goal.action_server = "move_base"
 
 	    mode = rospy.get_param('wandering_mode','normal')
 	    if mode == 'normal':
 	  	goal.target_pose.pose = nav_goal.goals.poses[0]
-		client.sent_goal(goal)
+		client.send_goal(goal)
 	    else:
 		goal.target_pose.pose = wait_point   		
 		if self.is_inside(wait_point.position, points):
@@ -221,7 +223,6 @@ class Searching(smach.State):
 
     def execute(self,userdata):
 	while(1):
-	    #print self.is_received
 	    if self.is_received:
 		return 'succeeded'
 	    rospy.sleep(rospy.Duration(0.5))		
@@ -455,13 +456,15 @@ class Following(smach.State):
 	if userdata.id_now == -1:
 	    self.angle_old = 0	
 	    rospy.sleep(rospy.Duration(0.3))
-	move_client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+	move_client = actionlib.SimpleActionClient('monitored_navigation',
+            MonitoredNavigationAction)
 	rospy.loginfo("Waiting for move_base action server...")
 	move_client.wait_for_server(rospy.Duration(60))
 	rospy.loginfo("Connected to move base server")
-	move_goal = MoveBaseGoal()
+	move_goal = MonitoredNavigationGoal()
 	move_goal.target_pose.header.frame_id = 'map'
  	move_goal.target_pose.header.stamp = rospy.Time.now()
+    move_goal.action_server = "move_base"
     		
 	
         pan_client = actionlib.SimpleActionClient('SetPTUState', PtuGotoAction)

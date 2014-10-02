@@ -68,6 +68,43 @@ class Trajectory:
         self.secs.append(secs)
         self.nsecs.append(nsecs)
 
+    def sort_pose(self):
+        if len(self.pose) > 1:
+            self.pose, self.secs, self.nsecs = self.__quick_sort(self.pose,
+                    self.secs, self.nsecs)
+
+    def __quick_sort(self, pose, secs, nsecs):
+        less_pose = []; equal_pose = []; greater_pose = []
+        less_secs = []; equal_secs = []; greater_secs = []
+        less_nsecs = []; equal_nsecs = []; greater_nsecs = []
+
+        if len(secs) > 1:
+            pivot = secs[0]
+            for i,sec in enumerate(secs):
+                if sec < pivot:
+                    less_secs.append(sec)
+                    less_pose.append(pose[i])
+                    less_nsecs.append(nsecs[i])
+                if sec == pivot:
+                    equal_secs.append(sec)
+                    equal_pose.append(pose[i])
+                    equal_nsecs.append(nsecs[i])
+                if sec > pivot:
+                    greater_secs.append(sec)
+                    greater_pose.append(pose[i])
+                    greater_nsecs.append(nsecs[i])
+
+            less_pose,less_secs,less_nsecs = self.__quick_sort(less_pose, less_secs, less_nsecs) 
+            greater_pose,greater_secs,greater_nsecs = \
+                self.__quick_sort(greater_pose, greater_secs, greater_nsecs)
+            equal_pose,equal_secs,equal_nsecs = \
+                self.__quick_sort(equal_pose,equal_nsecs,equal_secs)
+
+            return less_pose + equal_pose + greater_pose, less_secs + \
+                equal_secs + greater_secs, less_nsecs + equal_nsecs + greater_nsecs
+        else:
+            return pose, secs, nsecs
+
     def calc_stats(self):
 
         length = 0.0
@@ -215,6 +252,7 @@ if __name__=="__main__":
     ta = TrajectoryAnalyzer()
 
     for k, v in ta._traj.iteritems():
+        v.sort_pose()
         v.calc_stats()
         print k, len(v.pose), v.length, v.max_vel
     ta.visualize_trajectories()
