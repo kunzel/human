@@ -27,7 +27,7 @@ class followingServer(object):
     def __init__(self):
         self.server = actionlib.SimpleActionServer('following_Server', human_followingAction, self.execute, False)
         self.server.start()
-    
+
     def execute(self, goal):
         rospy.loginfo('Starting Service')
     	timestart = rospy.get_time()
@@ -40,8 +40,8 @@ class followingServer(object):
 
 	while not rospy.is_shutdown():
 	    if rospy.get_time() - timestart > timegoing:
-		#smach_thread.stop()	
-		rospy.signal_shutdown('Timeout')		
+		#smach_thread.stop()
+		rospy.signal_shutdown('Timeout')
 		return
 
 
@@ -49,7 +49,7 @@ def main():
     rospy.init_node('human_following_server')
     server = followingServer()
     rospy.spin()
-      
+
 if __name__ == '__main__':
     main()
 
