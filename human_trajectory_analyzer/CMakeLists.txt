@@ -5,8 +5,10 @@ project(human_trajectory_analyzer)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  human_msgs
   rospy
+  visualization_msgs
+  interactive_markers
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -81,7 +83,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES human_trajectory_analyzer
-#  CATKIN_DEPENDS human_msgs rospy
+  CATKIN_DEPENDS rospy visualization_msgs interactive_markers geometry_msgs
 #  DEPENDS system_lib
 )
 
