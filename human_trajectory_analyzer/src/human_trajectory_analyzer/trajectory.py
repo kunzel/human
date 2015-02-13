@@ -72,7 +72,51 @@ class Trajectory:
                                                                  self.secs,
                                                                  self.nsecs)
 
-    def __quick_sort(self, pose, secs, nsecs):
+    # this function assumes that all objects have the same length
+    # and the secs are the same
+    def __validate_poses(self, pose, secs, nsecs):
+        i = 0
+        while i < len(nsecs):
+            reduced_nsecs = nsecs[(i + 1):]
+            if nsecs[i] in reduced_nsecs:
+                index = reduced_nsecs.index(nsecs[i])
+                pose_index = pose[i + 1 + index]
+
+                prev_nsecs = next_nsecs = 1000000
+                for j in range(len(nsecs)):
+                    delta = nsecs[j] - nsecs[i]
+                    if delta == 0:
+                        continue
+                    if delta > 0 and delta < next_nsecs:
+                        next_nsecs = nsecs[j]
+                        next_pose = pose[j]
+                    if delta < 0 and delta < prev_nsecs:
+                        prev_nsecs = nsecs[j]
+                        prev_pose = pose[j]
+
+                if prev_nsecs == 1000000 and next_nsecs == 1000000:
+                    pose = [pose[i]]
+                    secs = [secs[i]]
+                    nsecs = [nsecs[i]]
+                    break
+
+                delta_i = abs(pose[i] - prev_pose) + abs(pose[i] - next_pose)
+                delta_index = abs(pose_index - prev_pose) + \
+                    abs(pose_index - next_pose)
+                if delta_i < delta_index:
+                    del nsecs[i + 1 + index]
+                    del pose[i + 1 + index]
+                    del secs[i + 1 + index]
+                    i -= 1
+                else:
+                    del nsecs[i]
+                    del pose[i]
+                    del secs[i]
+                    i -= 1
+            i += 1
+        return pose, secs, nsecs
+
+    def __quick_sort(self, pose, secs, nsecs, secs_sorted=False):
         less_pose = []
         equal_pose = []
         greater_pose = []
@@ -104,8 +148,11 @@ class Trajectory:
                                                                  less_nsecs)
             greater_pose, greater_secs, greater_nsecs = \
                 self.__quick_sort(greater_pose, greater_secs, greater_nsecs)
-            equal_pose, equal_secs, equal_nsecs = \
-                self.__quick_sort(equal_pose, equal_nsecs, equal_secs)
+            if not secs_sorted:
+                equal_pose, equal_secs, equal_nsecs = \
+                    self.__validate_poses(equal_pose, equal_secs, equal_nsecs)
+                equal_pose, equal_secs, equal_nsecs = \
+                    self.__quick_sort(equal_pose, equal_nsecs, equal_secs, True)
 
             return less_pose + equal_pose + greater_pose, less_secs + \
                 equal_secs + greater_secs, less_nsecs + equal_nsecs + \
@@ -150,11 +197,11 @@ class TrajectoryAnalyzer():
 
         self._client = pymongo.MongoClient(host, port)
         self._traj = dict()
-        self._retrieve_logs(marker_name)
+        self._retrieve_logs()
         self._server = InteractiveMarkerServer(marker_name)
 
-    def _retrieve_logs(self, marker_name):
-        logs = self._client.message_store.people_perception_marathon_uob.find()
+    def _retrieve_logs(self):
+        logs = self._client.message_store.people_perception.find()
 
         for log in logs:
             for i, uuid in enumerate(log['uuids']):
@@ -244,7 +291,7 @@ class TrajectoryAnalyzer():
         # line_marker.color.a = 1.0
 
         line_marker.points = []
-        MOD = 1
+        MOD = 3
         for i, point in enumerate(traj.pose):
             if i % MOD == 0:
                 x = point['position']['x']
