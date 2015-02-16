@@ -83,6 +83,7 @@ class Trajectory:
                 pose_index = pose[i + 1 + index]
 
                 prev_nsecs = next_nsecs = 1000000
+                prev_pose = next_pose = pose[i]
                 for j in range(len(nsecs)):
                     delta = nsecs[j] - nsecs[i]
                     if delta == 0:
@@ -134,25 +135,27 @@ class Trajectory:
                     less_secs.append(sec)
                     less_pose.append(pose[i])
                     less_nsecs.append(nsecs[i])
-                if sec == pivot:
+                elif sec == pivot:
                     equal_secs.append(sec)
                     equal_pose.append(pose[i])
                     equal_nsecs.append(nsecs[i])
-                if sec > pivot:
+                else:
                     greater_secs.append(sec)
                     greater_pose.append(pose[i])
                     greater_nsecs.append(nsecs[i])
 
-            less_pose, less_secs, less_nsecs = self.__quick_sort(less_pose,
-                                                                 less_secs,
-                                                                 less_nsecs)
+            less_pose, less_secs, less_nsecs = \
+                self.__quick_sort(less_pose, less_secs, less_nsecs,
+                                  secs_sorted)
             greater_pose, greater_secs, greater_nsecs = \
-                self.__quick_sort(greater_pose, greater_secs, greater_nsecs)
+                self.__quick_sort(greater_pose, greater_secs, greater_nsecs,
+                                  secs_sorted)
             if not secs_sorted:
                 equal_pose, equal_secs, equal_nsecs = \
                     self.__validate_poses(equal_pose, equal_secs, equal_nsecs)
-                equal_pose, equal_secs, equal_nsecs = \
-                    self.__quick_sort(equal_pose, equal_nsecs, equal_secs, True)
+                equal_pose, equal_nsecs, equal_secs = \
+                    self.__quick_sort(equal_pose, equal_nsecs, equal_secs,
+                                      not secs_sorted)
 
             return less_pose + equal_pose + greater_pose, less_secs + \
                 equal_secs + greater_secs, less_nsecs + equal_nsecs + \
@@ -200,6 +203,22 @@ class TrajectoryAnalyzer():
         self._retrieve_logs()
         self._server = InteractiveMarkerServer(marker_name)
 
+    def get_poses_persecond(self):
+        average_poses = 0
+        for uuid in self._traj:
+            traj = self._traj[uuid]
+            inner_counter = 1
+            outer_counter = 1
+            prev_sec = traj.secs[0]
+            for i, sec in enumerate(traj.secs[1:]):
+                if prev_sec == sec:
+                    inner_counter += 1
+                else:
+                    prev_sec = sec
+                    outer_counter += 1
+            average_poses += round(inner_counter/outer_counter)
+        return round(average_poses/len(self._traj))
+
     def _retrieve_logs(self):
         logs = self._client.message_store.people_perception.find()
 
@@ -239,8 +258,6 @@ class TrajectoryAnalyzer():
                         counter += 1
                 else:
                     self.visualize_trajectory(self._traj[uuid])
-                    # raw_input("Press 'Enter' for the next trajectory.")
-                    # self.delete_trajectory(self._traj[uuid])
                     counter += 1
 
         rospy.loginfo("Total Trajectories: " + str(len(self._traj)))
@@ -270,14 +287,6 @@ class TrajectoryAnalyzer():
         pose.position.x = traj.pose[0]['position']['x']
         pose.position.y = traj.pose[0]['position']['y']
         int_marker.pose = pose
-
-        # for i in range(len(traj.pose)):
-        #     print "Velocity: ", traj.vel[i]
-        #     print "X,Y: ", traj.pose[i]['position']['x'],\
-        #         traj.pose[i]['position']['y']
-        #     print "Time: ", str(traj.secs[i]) + "." + str(traj.nsecs[i])
-
-        # print traj.max_vel, traj.length
 
         line_marker = Marker()
         line_marker.type = Marker.LINE_STRIP
@@ -324,46 +333,45 @@ class TrajectoryAnalyzer():
 
         return int_marker
 
+    def trajectory_visualization(self, mode):
+        average_length = 0
+        longest_length = -1
+        short_trajectories = 0
+        average_max_vel = 0
+        highest_max_vel = -1
+        minimal_frame = self.get_poses_persecond() * 5
 
-def trajectory_visualization(mode):
-    ta = TrajectoryAnalyzer('traj_vis')
-    average_length = 0
-    longest_length = -1
-    short_trajectories = 0
-    average_max_vel = 0
-    highest_max_vel = -1
+        for k, v in self._traj.items():
+            v.sort_pose()
+            v.calc_stats()
+            # Delete non-moving objects
+            if (v.max_vel < 0.1 or v.length < 0.1) and k in self._traj:
+                del self._traj[k]
+            # Delete trajectories that appear less than 5 seconds
+            if len(v.pose) < minimal_frame and k in self._traj:
+                del self._traj[k]
 
-    for k, v in ta._traj.items():
-        v.sort_pose()
-        v.calc_stats()
-        # Delete non-moving objects
-        if (v.max_vel < 0.1 or v.length < 0.1) and k in ta._traj:
-            del ta._traj[k]
-        # Delete trajectories that appear less than 15 frames
-        if len(v.pose) < 15 and k in ta._traj:
-            del ta._traj[k]
+        for k, v in self._traj.iteritems():
+            average_length += v.length
+            average_max_vel += v.max_vel
+            if v.length < 1:
+                short_trajectories += 1
+            if longest_length < v.length:
+                longest_length = v.length
+            if highest_max_vel < v.max_vel:
+                highest_max_vel = v.max_vel
 
-    for k, v in ta._traj.iteritems():
-        average_length += v.length
-        average_max_vel += v.max_vel
-        if v.length < 1:
-            short_trajectories += 1
-        if longest_length < v.length:
-            longest_length = v.length
-        if highest_max_vel < v.max_vel:
-            highest_max_vel = v.max_vel
+        average_length /= len(self._traj)
+        average_max_vel /= len(self._traj)
+        rospy.loginfo("Average length of tracks is " + str(average_length))
+        rospy.loginfo("Longest length of tracks is " + str(longest_length))
+        rospy.loginfo("Short trajectories are " + str(short_trajectories))
+        rospy.loginfo("Average maximum velocity of tracks is " +
+                      str(average_max_vel))
+        rospy.loginfo("Highest maximum velocity of tracks is " +
+                      str(highest_max_vel))
 
-    average_length /= len(ta._traj)
-    average_max_vel /= len(ta._traj)
-    rospy.loginfo("Average length of tracks is " + str(average_length))
-    rospy.loginfo("Longest length of tracks is " + str(longest_length))
-    rospy.loginfo("Short trajectories are " + str(short_trajectories))
-    rospy.loginfo("Average maximum velocity of tracks is " +
-                  str(average_max_vel))
-    rospy.loginfo("Highest maximum velocity of tracks is " +
-                  str(highest_max_vel))
-
-    ta.visualize_trajectories(mode, average_length, longest_length)
+        self.visualize_trajectories(mode, average_length, longest_length)
 
 
 if __name__ == "__main__":
@@ -376,6 +384,8 @@ if __name__ == "__main__":
 
     rospy.init_node("human_trajectory_visualization")
     rospy.loginfo("Running Trajectory Analyzer")
-    trajectory_visualization(mode)
+
+    ta = TrajectoryAnalyzer('traj_vis')
+    ta.trajectory_visualization(mode)
 
     raw_input("Press 'Enter' to exit.")
