@@ -195,8 +195,8 @@ class TrajectoryAnalyzer():
 
     def __init__(self, marker_name):
 
-        host = rospy.get_param("datacentre_host")
-        port = rospy.get_param("datacentre_port")
+        host = rospy.get_param("mongodb_host")
+        port = rospy.get_param("mongodb_port")
 
         self._client = pymongo.MongoClient(host, port)
         self._traj = dict()
